@@ -12,6 +12,8 @@ class HandType(Enum):
     UNITREE_DEX3_Unit_Test = "../../assets/unitree_hand/unitree_dex3.yml"
     BRAINCO_HAND = "../assets/brainco_hand/brainco.yml"
     BRAINCO_HAND_Unit_Test = "../../assets/brainco_hand/brainco.yml"
+    LINKER_O6_HAND = "../assets/linker_o6/linker_o6.yml"
+
 
 class HandRetargeting:
     def __init__(self, hand_type: HandType):
@@ -27,6 +29,8 @@ class HandRetargeting:
             RetargetingConfig.set_default_urdf_dir('../assets')
         elif hand_type == HandType.BRAINCO_HAND_Unit_Test:
             RetargetingConfig.set_default_urdf_dir('../../assets')
+        elif hand_type == HandType.LINKER_O6_HAND:
+            RetargetingConfig.set_default_urdf_dir('../assets')
 
         config_file_path = Path(hand_type.value)
 
@@ -76,6 +80,45 @@ class HandRetargeting:
                 self.left_dex_retargeting_to_hardware = [ self.left_retargeting_joint_names.index(name) for name in self.left_brainco_api_joint_names]
                 self.right_dex_retargeting_to_hardware = [ self.right_retargeting_joint_names.index(name) for name in self.right_brainco_api_joint_names]
         
+            elif hand_type == HandType.LINKER_O6_HAND:
+                    # 1) 用构建器真实的输出名序（与 YAML 对齐）
+                left_out_names  = self.left_retargeting.joint_names
+                right_out_names = self.right_retargeting.joint_names
+
+                # 2) 按协议的“硬件顺序”（BYTE1..6）——先 pitch 再 yaw，再四指
+                O6_HW_ORDER = [
+                    'thumb_cmc_pitch', 'thumb_cmc_yaw',
+                    'index_mcp_pitch', 'middle_mcp_pitch', 'ring_mcp_pitch', 'pinky_mcp_pitch'
+                ]
+
+                # 3) 生成 permutation：retarget输出 -> 硬件顺序
+                name_to_idx_L = {n:i for i,n in enumerate(left_out_names)}
+                name_to_idx_R = {n:i for i,n in enumerate(right_out_names)}
+                self.left_dex_retargeting_to_hardware  = [name_to_idx_L[n] for n in O6_HW_ORDER]
+                self.right_dex_retargeting_to_hardware = [name_to_idx_R[n] for n in O6_HW_ORDER]
+            #     self.left_retargeting_joint_names = [
+            #     'thumb_cmc_pitch',
+            #     'thumb_cmc_yaw',
+            #     'index_mcp_pitch',
+            #     'middle_mcp_pitch',
+            #     'ring_mcp_pitch',
+            #     'pinky_mcp_pitch',
+            # ]
+            #     self.right_retargeting_joint_names = [
+            #     'thumb_cmc_pitch',
+            #     'thumb_cmc_yaw',
+            #     'index_mcp_pitch',
+            #     'middle_mcp_pitch',
+            #     'ring_mcp_pitch',
+            #     'pinky_mcp_pitch',
+            # ]
+            #     self.left_dex_retargeting_to_hardware = [ self.left_retargeting_joint_names.index(name) for name in self.left_retargeting_joint_names]
+                
+            #     self.right_dex_retargeting_to_hardware = [ self.right_retargeting_joint_names.index(name) for name in self.right_retargeting_joint_names]
+
+
+
+
         except FileNotFoundError:
             logger_mp.warning(f"Configuration file not found: {config_file_path}")
             raise

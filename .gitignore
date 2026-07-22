@@ -22,4 +22,4 @@ __MACOSX/
 teleop/data/
 episode_0*
 .vscode/
-*.pkl
+*.pklteleop/robot_control_o6.zip
